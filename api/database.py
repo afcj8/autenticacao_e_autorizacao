@@ -3,7 +3,7 @@
 from sqlmodel import Session, SQLModel , create_engine
 from fastapi import Depends
 
-sqlite_file_name = "fastauth.db"
+sqlite_file_name = "auth.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 connect_args = {"check_same_thread": False}
