@@ -16,6 +16,35 @@ tipos_imagem_permitidos =  ["image/jpeg", "image/png"]
 
 router = APIRouter()
 
+@router.get(
+    "", 
+    response_model=list[UsuarioGrupoResponse], 
+)
+async def listar_usuarios(
+    *,
+    session: Session = SessionDep
+):
+    """Lista todos os usuários com seus grupos"""
+    
+    usuarios = session.exec(select(Usuario).order_by(Usuario.id)).all()
+    
+    response = []
+    for usuario in usuarios:
+        grupos = [grupo.nome_grupo for grupo in usuario.grupos]
+        response.append(
+            UsuarioGrupoResponse(
+                id=usuario.id,
+                nome_usuario=usuario.nome_usuario,
+                nome_pessoa=usuario.nome_pessoa,
+                email=usuario.email,
+                avatar=usuario.avatar,
+                ativo=usuario.ativo,
+                grupos=grupos
+            )
+        )
+    
+    return response
+
 @router.post(
     "", 
     status_code=201, 
