@@ -5,15 +5,16 @@ from fastapi.exceptions import HTTPException
 from sqlmodel import Session, select
 
 from api.database import SessionDep
-from api.models.usuario import Usuario, Grupo
+from api.models.usuario import Usuario, Grupo, get_permissoes
 from api.security import criar_hash_senha
 
 from api.serializers.usuario import (
+    UsuarioResponse,
     UsuarioGrupoResponse,
     UsuarioAtivoPatchRequest
 )
 
-from api.auth import buscar_super_usuario
+from api.auth import buscar_super_usuario, buscar_usuario_atual_ativo
 
 tipos_imagem_permitidos =  ["image/jpeg", "image/png"]
 
@@ -104,6 +105,39 @@ async def criar_usuario(
         ativo=db_usuario.ativo,
         grupos=[grupo.id for grupo in db_usuario.grupos]
     )
+
+@router.patch(
+    "/{id}/avatar",
+    status_code=200,
+)
+async def atualizar_avatar_usuario(
+    *,
+    session: Session = SessionDep,
+    id: int,
+    avatar: UploadFile = File(...),
+    usuario: Usuario = Depends(buscar_usuario_atual_ativo),
+) -> UsuarioResponse:
+    """Atualiza o avatar de um usuário"""
+    
+    permissoes_usuario = get_permissoes(usuario.nome_usuario)
+    
+    usuario_buscado = session.get(Usuario, id)
+    if not usuario_buscado:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    if usuario.id != id and "all:all" not in permissoes_usuario:
+        raise HTTPException(status_code=403, detail="Você não tem permissão para atualizar o avatar de outro usuário")
+     
+    if avatar.content_type not in tipos_imagem_permitidos:
+        raise HTTPException(status_code=415, detail="Tipo de imagem não permitido, deve ser uma imagem do tipo: " + ", ".join(tipos_imagem_permitidos))
+    
+    avatar_nome = f"{uuid.uuid4()}{avatar.filename}"
+    usuario_buscado.avatar = avatar_nome
+    
+    session.add(usuario_buscado)
+    session.commit()
+    session.refresh(usuario_buscado)
+    return usuario_buscado
     
 @router.patch(
     "/{id}/status",
@@ -134,5 +168,5 @@ async def atualizar_status_usuario(
         email=db_usuario.email,
         avatar=db_usuario.avatar,
         ativo=db_usuario.ativo,
-        grupos=[grupo.id for grupo in db_usuario.grupos]
+        grupos=[grupo.nome_grupo for grupo in db_usuario.grupos]
     )
