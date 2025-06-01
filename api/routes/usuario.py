@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, File, UploadFile, Form, status
+from fastapi import APIRouter, File, UploadFile, Form, status, Depends
 from fastapi.exceptions import HTTPException
 from sqlmodel import Session, select
 
@@ -10,7 +10,10 @@ from api.security import criar_hash_senha
 
 from api.serializers.usuario import (
     UsuarioGrupoResponse,
+    UsuarioAtivoPatchRequest
 )
+
+from api.auth import buscar_super_usuario
 
 tipos_imagem_permitidos =  ["image/jpeg", "image/png"]
 
@@ -92,6 +95,38 @@ async def criar_usuario(
     session.add(db_usuario)
     session.commit()
     session.refresh(db_usuario)
+    return UsuarioGrupoResponse(
+        id=db_usuario.id,
+        nome_usuario=db_usuario.nome_usuario,
+        nome_pessoa=db_usuario.nome_pessoa,
+        email=db_usuario.email,
+        avatar=db_usuario.avatar,
+        ativo=db_usuario.ativo,
+        grupos=[grupo.id for grupo in db_usuario.grupos]
+    )
+    
+@router.patch(
+    "/{id}/status",
+    status_code=200,
+)
+async def atualizar_status_usuario(
+    *,
+    id: int,
+    patch_data: UsuarioAtivoPatchRequest,
+    session: Session = SessionDep,
+    usuario: Usuario = Depends(buscar_super_usuario)
+):
+    """Ativa ou desativa um usuário, apenas superusuários podem fazer isso"""
+    
+    db_usuario = session.get(Usuario, id)
+    if not db_usuario:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+    
+    db_usuario.ativo = patch_data.ativo
+    session.add(db_usuario)
+    session.commit()
+    session.refresh(db_usuario)
+    
     return UsuarioGrupoResponse(
         id=db_usuario.id,
         nome_usuario=db_usuario.nome_usuario,

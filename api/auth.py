@@ -50,7 +50,7 @@ def criar_access_token(
 
 criar_refresh_token = partial(criar_access_token, scope="refresh_token")
 
-async def valida_token(
+def valida_token(
     token: str = Depends(oauth2_scheme), 
     request: Request = None # pyright: ignore
 ) -> TokenData:
@@ -158,12 +158,12 @@ async def buscar_super_usuario(
     Verifica se o usuário atual pertence ao grupo 'admins'.
     Retorna o usuário se for super usuário, ou lança uma exceção HTTP 401.
     """
-    grupos_usuario = [grupo.nome for grupo in usuario_atual.grupos]
+    grupos_usuario = [grupo.nome_grupo for grupo in usuario_atual.grupos]
 
     if 'admins' not in grupos_usuario:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário não possui permissões de super usuário"
+            detail="Usuário não é do grupo de administradores",
         )
     
     return usuario_atual

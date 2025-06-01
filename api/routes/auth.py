@@ -97,7 +97,7 @@ async def refresh_token(
 ):
     """Atualiza o token de acesso"""
     
-    usuario = await valida_token(token = form_data.refresh_token)
+    usuario = valida_token(token = form_data.refresh_token)
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES) # pyright: ignore
     access_token = criar_access_token(
