@@ -1,0 +1,74 @@
+import uuid
+
+from fastapi import APIRouter, File, UploadFile, Form, status
+from fastapi.exceptions import HTTPException
+from sqlmodel import Session, select
+
+from api.database import SessionDep
+from api.models.usuario import Usuario, Grupo
+from api.security import criar_hash_senha
+
+from api.serializers.usuario import (
+    UsuarioGrupoResponse,
+)
+
+tipos_imagem_permitidos =  ["image/jpeg", "image/png"]
+
+router = APIRouter()
+
+@router.post(
+    "", 
+    status_code=201, 
+)
+async def criar_usuario(
+    *,
+    nome_usuario: str = Form(...),
+    nome_pessoa: str = Form(...),
+    senha: str = Form(...),
+    email: str = Form(...),
+    avatar: UploadFile = File(None),
+    grupos: list[int] = Form(...),
+    session: Session = SessionDep
+) -> UsuarioGrupoResponse:
+    """Cria um novo usuário"""
+    
+    email_existente = session.exec(select(Usuario).where(Usuario.email == email)).first()
+    if email_existente:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado")
+    
+    nome_usuario_existente = session.exec(select(Usuario).where(Usuario.nome_usuario == nome_usuario)).first()
+    if nome_usuario_existente:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Nome de usuário já cadastrado")
+    
+    grupos_db = session.exec(select(Grupo).where(Grupo.id.in_(grupos))).all()
+    print(f"Grupos encontrados: {[grupo.id for grupo in grupos_db]}")
+    if len(grupos_db) != len(grupos):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alguns grupos não foram encontrados")
+    
+    db_usuario = Usuario(
+        nome_usuario=nome_usuario,
+        nome_pessoa=nome_pessoa,
+        senha=criar_hash_senha(senha),
+        email=email,
+        grupos=grupos_db
+    )
+    
+    if avatar:
+        print(f"Avatar recebido: {avatar.filename}, tipo: {avatar.content_type}")
+        if avatar.content_type not in tipos_imagem_permitidos:
+            raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Tipo de imagem não permitido, deve ser uma imagem do tipo: " + ", ".join(tipos_imagem_permitidos))
+        avatar_nome = f"avatar_{uuid.uuid4()}.{avatar.filename.split('.')[-1]}"
+        db_usuario.avatar = avatar_nome
+        
+    session.add(db_usuario)
+    session.commit()
+    session.refresh(db_usuario)
+    return UsuarioGrupoResponse(
+        id=db_usuario.id,
+        nome_usuario=db_usuario.nome_usuario,
+        nome_pessoa=db_usuario.nome_pessoa,
+        email=db_usuario.email,
+        avatar=db_usuario.avatar,
+        ativo=db_usuario.ativo,
+        grupos=[grupo.id for grupo in db_usuario.grupos]
+    )
