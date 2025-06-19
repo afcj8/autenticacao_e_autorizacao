@@ -135,7 +135,34 @@ async def buscar_usuario_logado(
                 ativo=usuario.ativo,
                 grupos=grupos
             )   
-            
+
+@router.get(
+    "/{id}",
+    response_model=UsuarioGrupoResponse,
+)
+async def buscar_usuario_por_id(
+    *,
+    session: Session = SessionDep,
+    id: int,
+    depends: Usuario = Depends(buscar_usuario_atual_ativo),
+) -> UsuarioGrupoResponse:
+    """Busca um usuário pelo ID"""
+    
+    usuario = session.get(Usuario, id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    grupos = [grupo.nome_grupo for grupo in usuario.grupos]
+    return UsuarioGrupoResponse(
+        id=usuario.id,
+        nome_usuario=usuario.nome_usuario,
+        nome_pessoa=usuario.nome_pessoa,
+        email=usuario.email,
+        avatar=usuario.avatar,
+        ativo=usuario.ativo,
+        grupos=grupos
+    )
+    
 @router.patch(
     "/{id}/avatar",
     status_code=200,
