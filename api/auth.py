@@ -151,6 +151,49 @@ async def buscar_usuario_atual_ativo(
 
 UsuarioAutenticado = Depends(buscar_usuario_atual_ativo)
 
+async def buscar_usuario_se_alterar_senha_for_permitido(
+    *, 
+    request: Request, 
+    pwd_reset_token: Optional[str] = None, 
+    nome_usuario: str
+) -> Usuario:
+    
+    usuario_alvo = get_usuario(nome_usuario)
+    if not usuario_alvo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+        
+    # Decodifica o token antes de passar para buscar_usuario_atual
+    try:
+        token_data = valida_token(token=pwd_reset_token) if pwd_reset_token else None
+        valida_senha_reset = (
+            buscar_usuario_atual(token_data=token_data) == usuario_alvo
+        )
+    except (HTTPException, JWTError):
+        valida_senha_reset = False
+
+    try:
+        usuario_autenticado = buscar_usuario_atual(token_data="", request=request)
+    except HTTPException:
+        usuario_autenticado = None
+        
+    if any(
+        [
+            valida_senha_reset,
+            usuario_autenticado and usuario_autenticado.id == usuario_alvo.id
+        ]
+    ):
+        return usuario_alvo
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Você não tem permissão de mudar a senha deste usuário"
+    )
+    
+PodeAlterarSenha = Depends(buscar_usuario_se_alterar_senha_for_permitido)
+
 async def buscar_super_usuario(
     usuario_atual: Usuario = Depends(buscar_usuario_atual)
 ) -> Usuario:

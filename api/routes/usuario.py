@@ -12,10 +12,12 @@ from api.serializers.usuario import (
     UsuarioResponse,
     UsuarioGrupoResponse,
     UsuarioAtivoPatchRequest,
-    UsuarioGrupoPatchRequest
+    UsuarioGrupoPatchRequest,
+    UsuarioSenhaPatchRequest,
 )
 
 from api.auth import (
+    PodeAlterarSenha,
     UsuarioAutenticado,
     buscar_super_usuario, 
     buscar_usuario_atual_ativo
@@ -231,6 +233,23 @@ async def atualizar_grupos_usuario(
         ativo=usuario.ativo,
         grupos=[grupo.nome_grupo for grupo in usuario.grupos]
     )
+
+@router.patch(
+    "/{nome_usuario}/senha",
+)
+async def atualizar_senha_usuario(
+    *,
+    session: Session = SessionDep,
+    patch_data: UsuarioSenhaPatchRequest,
+    usuario: Usuario = PodeAlterarSenha,
+):
+    """Atualiza a senha de um usuário"""
+    
+    usuario.senha = patch_data.senha_hash
+    session.add(usuario)
+    session.commit()
+    session.refresh(usuario)
+    return {"detail": "Senha atualizada com sucesso!"}
 
 @router.patch(
     "/{id}/status",
