@@ -14,7 +14,11 @@ from api.serializers.usuario import (
     UsuarioAtivoPatchRequest
 )
 
-from api.auth import buscar_super_usuario, buscar_usuario_atual_ativo
+from api.auth import (
+    UsuarioAutenticado,
+    buscar_super_usuario, 
+    buscar_usuario_atual_ativo
+)
 
 tipos_imagem_permitidos =  ["image/jpeg", "image/png"]
 
@@ -106,6 +110,31 @@ async def criar_usuario(
         grupos=[grupo.id for grupo in db_usuario.grupos]
     )
 
+@router.get(
+    "/me", 
+    response_model=UsuarioGrupoResponse
+)
+async def buscar_usuario_logado(
+    *, 
+    session: Session = SessionDep, 
+    usuario: Usuario = UsuarioAutenticado
+):
+    """Retorna dados do usuário autenticado"""
+    
+    with session:
+        usuario = session.exec(select(Usuario).where(Usuario.id == usuario.id)).first()
+        if usuario:
+            grupos = [grupo.nome_grupo for grupo in usuario.grupos]
+            return UsuarioGrupoResponse(
+                id=usuario.id,
+                nome_usuario=usuario.nome_usuario,
+                nome_pessoa=usuario.nome_pessoa,
+                email=usuario.email,
+                avatar=usuario.avatar,
+                ativo=usuario.ativo,
+                grupos=grupos
+            )   
+            
 @router.patch(
     "/{id}/avatar",
     status_code=200,
