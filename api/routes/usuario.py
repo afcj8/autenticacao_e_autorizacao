@@ -11,7 +11,8 @@ from api.security import criar_hash_senha
 from api.serializers.usuario import (
     UsuarioResponse,
     UsuarioGrupoResponse,
-    UsuarioAtivoPatchRequest
+    UsuarioAtivoPatchRequest,
+    UsuarioGrupoPatchRequest
 )
 
 from api.auth import (
@@ -167,7 +168,39 @@ async def atualizar_avatar_usuario(
     session.commit()
     session.refresh(usuario_buscado)
     return usuario_buscado
+
+@router.patch(
+    "/{id}/grupos", 
+    status_code=200,
+)
+async def atualizar_grupos_usuario(
+    *,
+    session: Session = SessionDep,
+    id: int,
+    patch_data: UsuarioGrupoPatchRequest,
+) -> UsuarioGrupoResponse:
+    """Atualiza os grupos de um usuário"""
     
+    usuario = session.get(Usuario, id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    grupos = session.exec(select(Grupo).where(Grupo.id.in_(patch_data.grupos))).all()
+    usuario.grupos = grupos
+    
+    session.add(usuario)
+    session.commit()
+    session.refresh(usuario)
+    return UsuarioGrupoResponse(
+        id=usuario.id,
+        nome_usuario=usuario.nome_usuario,
+        nome_pessoa=usuario.nome_pessoa,
+        email=usuario.email,
+        avatar=usuario.avatar,
+        ativo=usuario.ativo,
+        grupos=[grupo.nome_grupo for grupo in usuario.grupos]
+    )
+
 @router.patch(
     "/{id}/status",
     status_code=200,
