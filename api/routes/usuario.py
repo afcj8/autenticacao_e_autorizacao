@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, File, UploadFile, Form, status, Depends
+from fastapi import APIRouter, File, UploadFile, Form, status, Depends, Body, BackgroundTasks
 from fastapi.exceptions import HTTPException
 from sqlmodel import Session, select
 
@@ -19,6 +19,10 @@ from api.auth import (
     UsuarioAutenticado,
     buscar_super_usuario, 
     buscar_usuario_atual_ativo
+)
+
+from api.services import (
+    tenta_enviar_email_de_reset_de_senha,
 )
 
 tipos_imagem_permitidos =  ["image/jpeg", "image/png"]
@@ -259,3 +263,19 @@ async def atualizar_status_usuario(
         ativo=db_usuario.ativo,
         grupos=[grupo.nome_grupo for grupo in db_usuario.grupos]
     )
+    
+@router.post(
+    "/reset-senha"
+)
+async def resetar_senha(
+    *,
+    email: str = Body(embed=True),
+    background_tasks: BackgroundTasks,
+):
+    """Envia um email para resetar a senha"""
+    
+    background_tasks.add_task(
+        tenta_enviar_email_de_reset_de_senha, 
+        email=email
+    )
+    return {"detail": "Email enviado com sucesso"}
