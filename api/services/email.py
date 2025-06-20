@@ -4,8 +4,8 @@ from time import sleep
 from sqlmodel import Session, select
 
 from api.auth import criar_access_token
-from api.database import engine
 from api.models.usuario import Usuario
+from api.database import engine
 
 from api.config import RESET_TOKEN_EXPIRE_MINUTES, PWD_RESET_URL, smtp_sender
         

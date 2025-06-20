@@ -24,7 +24,7 @@ async def listar_grupos(
     # para evitar que usuários comuns vejam este grupo
     # e suas permissões.
     
-    grupos = session.exec(select(Grupo).where(Grupo.nome_grupo != "admins")).all()
+    grupos = session.exec(select(Grupo)).all()
     response = []
     for grupo in grupos:
         response.append(

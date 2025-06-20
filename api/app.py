@@ -1,5 +1,10 @@
 from fastapi import FastAPI
-from api.database import create_db_and_tables
+from api.database import (
+    create_db_and_tables, 
+    create_default_groups_and_permissions,
+    create_user_admin
+)
+
 from .routes import main_router
 
 def lifespan(app: FastAPI):
@@ -7,6 +12,8 @@ def lifespan(app: FastAPI):
     
     # Executa na inicialização da aplicação
     create_db_and_tables()
+    create_default_groups_and_permissions()
+    create_user_admin()
     yield  # Separa a inicialização do encerramento
     # Executa no encerramento da aplicação
     pass

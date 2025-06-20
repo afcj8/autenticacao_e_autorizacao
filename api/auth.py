@@ -10,7 +10,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
-from api.models.usuario import Usuario, get_usuario, get_usuario_grupos_permissoes
+from api.services.usuario import get_usuario, get_usuario_grupos_permissoes
+from api.models.usuario import Usuario
 from api.security import verificar_senha
 from api.config import SECRET_KEY, ALGORITHM
 

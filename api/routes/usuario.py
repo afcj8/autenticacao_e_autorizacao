@@ -5,7 +5,8 @@ from fastapi.exceptions import HTTPException
 from sqlmodel import Session, select
 
 from api.database import SessionDep
-from api.models.usuario import Usuario, Grupo, get_permissoes
+from api.models.usuario import Usuario, Grupo
+from api.services.usuario import get_permissoes
 from api.security import criar_hash_senha
 
 from api.serializers.usuario import (
@@ -23,7 +24,7 @@ from api.auth import (
     buscar_usuario_atual_ativo
 )
 
-from api.services import (
+from api.services.email import (
     tenta_enviar_email_de_reset_de_senha,
 )
 
