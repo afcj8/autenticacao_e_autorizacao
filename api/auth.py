@@ -271,6 +271,6 @@ class ValidarPermissoes:
             else:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Você não tem permissão para acessar este recurso. Verifique suas credenciais ou entre em contato com o administrador do sistema.",
+                    detail="Você não tem permissão para acessar este recurso.",
                     headers={"WWW-Authenticate": "Bearer"},
             )

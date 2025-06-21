@@ -1,9 +1,10 @@
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from sqlmodel import Session, select
 
+from api.auth import ValidarPermissoes
 from api.database import SessionDep
 from api.models.usuario import Permissao, GrupoPermissaoLink
 from api.serializers.usuario import PermissaoResponse, PermissaoRequest
@@ -12,7 +13,8 @@ router = APIRouter()
 
 @router.get(
     "", 
-    response_model=List[PermissaoResponse], 
+    response_model=List[PermissaoResponse],
+    dependencies=[Depends(ValidarPermissoes("read:permissao"))]
 )
 async def listar_permissoes(
     *, 
@@ -32,7 +34,8 @@ async def listar_permissoes(
 @router.post(
     "", 
     response_model=PermissaoResponse, 
-    status_code=201, 
+    status_code=201,
+    dependencies=[Depends(ValidarPermissoes("add:permissao"))]
 )
 async def criar_permissao(
     *, 
@@ -54,7 +57,8 @@ async def criar_permissao(
 
 @router.patch(
     "/{id}", 
-    response_model=PermissaoResponse, 
+    response_model=PermissaoResponse,
+    dependencies=[Depends(ValidarPermissoes("update:permissao"))]
 )
 async def atualizar_permissao(
     *, 
@@ -78,7 +82,8 @@ async def atualizar_permissao(
     return permissao
 
 @router.delete(
-    "/{id}", 
+    "/{id}",
+    dependencies=[Depends(ValidarPermissoes("delete:permissao"))]
 )
 async def deletar_permissao(
     *, 
