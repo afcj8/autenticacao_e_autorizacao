@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get(
     "", 
     response_model=List[GrupoResponse],
-    dependencies=[Depends(ValidarPermissoes("read:grupo"))]
+    dependencies=[Depends(ValidarPermissoes(["read:grupo"]))]
 )
 async def listar_grupos(
     *, 
@@ -42,7 +42,7 @@ async def listar_grupos(
     "",
     response_model=GrupoResponse,
     status_code=201,
-    dependencies=[Depends(ValidarPermissoes("add:grupo"))]
+    dependencies=[Depends(ValidarPermissoes(["add:grupo"]))]
 )
 async def criar_grupo(
     *, 
@@ -70,7 +70,7 @@ async def criar_grupo(
 @router.get(
     "/{id}", 
     response_model=GrupoResponse,
-    dependencies=[Depends(ValidarPermissoes("read:grupo"))]
+    dependencies=[Depends(ValidarPermissoes(["read:grupo"]))]
 )
 async def buscar_grupo_por_id(
     *, 
@@ -92,7 +92,7 @@ async def buscar_grupo_por_id(
 @router.patch(
     "/{id}", 
     response_model=GrupoResponse,
-    dependencies=[Depends(ValidarPermissoes("update:grupo"))]
+    dependencies=[Depends(ValidarPermissoes(["update:grupo"]))]
 )
 async def atualizar_grupo(
     *, 
@@ -127,7 +127,7 @@ async def atualizar_grupo(
     
 @router.delete(
     "/{id}",
-    dependencies=[Depends(ValidarPermissoes("delete:grupo"))]
+    dependencies=[Depends(ValidarPermissoes(["delete:grupo"]))]
 )
 async def deletar_grupo(
     *, 

@@ -36,7 +36,7 @@ router = APIRouter()
 @router.get(
     "", 
     response_model=list[UsuarioGrupoResponse], 
-    dependencies=[Depends(ValidarPermissoes("read:usuario"))]
+    dependencies=[Depends(ValidarPermissoes(["read:usuario"]))]
 )
 async def listar_usuarios(
     *,
@@ -44,7 +44,7 @@ async def listar_usuarios(
 ):
     """Lista todos os usuários com seus grupos"""
     
-    usuarios = session.exec(select(Usuario).order_by(Usuario.id)).all()
+    usuarios = session.exec(select(Usuario).where(Usuario.nome_usuario != 'admin').order_by(Usuario.id)).all()
     
     response = []
     for usuario in usuarios:
@@ -66,7 +66,7 @@ async def listar_usuarios(
 @router.post(
     "", 
     status_code=201,
-    dependencies=[Depends(ValidarPermissoes("add:usuario"))]
+    dependencies=[Depends(ValidarPermissoes(["add:usuario"]))]
 )
 async def criar_usuario(
     *,
@@ -77,7 +77,7 @@ async def criar_usuario(
     avatar: UploadFile = File(None),
     grupos: list[int] = Form(...),
     session: Session = SessionDep
-) -> UsuarioGrupoResponse:
+):
     """Cria um novo usuário"""
     
     email_existente = session.exec(select(Usuario).where(Usuario.email == email)).first()
@@ -111,15 +111,7 @@ async def criar_usuario(
     session.add(db_usuario)
     session.commit()
     session.refresh(db_usuario)
-    return UsuarioGrupoResponse(
-        id=db_usuario.id,
-        nome_usuario=db_usuario.nome_usuario,
-        nome_pessoa=db_usuario.nome_pessoa,
-        email=db_usuario.email,
-        avatar=db_usuario.avatar,
-        ativo=db_usuario.ativo,
-        grupos=[grupo.id for grupo in db_usuario.grupos]
-    )
+    return {"detail": "Usuário criado com sucesso."}
 
 @router.get(
     "/me", 
@@ -149,7 +141,7 @@ async def buscar_usuario_logado(
 @router.get(
     "/{id}",
     response_model=UsuarioGrupoResponse,
-    dependencies=[Depends(ValidarPermissoes("read:usuario"))]
+    dependencies=[Depends(ValidarPermissoes(["read:usuario"]))]
 )
 async def buscar_usuario_por_id(
     *,
@@ -210,7 +202,7 @@ async def atualizar_avatar_usuario(
 @router.patch(
     "/{id}/grupos", 
     status_code=200,
-    dependencies=[Depends(ValidarPermissoes("update:usuariogrupo"))]
+    dependencies=[Depends(ValidarPermissoes(["update:usuariogrupo"]))]
 )
 async def atualizar_grupos_usuario(
     *,
@@ -260,7 +252,6 @@ async def atualizar_senha_usuario(
 @router.patch(
     "/{id}/status",
     status_code=200,
-    dependencies=[Depends(ValidarPermissoes("update:usuario"))]
 )
 async def atualizar_status_usuario(
     *,

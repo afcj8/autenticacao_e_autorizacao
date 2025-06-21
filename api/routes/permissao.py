@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get(
     "", 
     response_model=List[PermissaoResponse],
-    dependencies=[Depends(ValidarPermissoes("read:permissao"))]
+    dependencies=[Depends(ValidarPermissoes(["read:permissao"]))]
 )
 async def listar_permissoes(
     *, 
@@ -35,7 +35,7 @@ async def listar_permissoes(
     "", 
     response_model=PermissaoResponse, 
     status_code=201,
-    dependencies=[Depends(ValidarPermissoes("add:permissao"))]
+    dependencies=[Depends(ValidarPermissoes(["add:permissao"]))]
 )
 async def criar_permissao(
     *, 
@@ -58,7 +58,7 @@ async def criar_permissao(
 @router.get(
     "/{id}", 
     response_model=PermissaoResponse,
-    dependencies=[Depends(ValidarPermissoes("read:permissao"))]
+    dependencies=[Depends(ValidarPermissoes(["read:permissao"]))]
 )
 async def buscar_permissao_por_id(
     *, 
@@ -76,7 +76,7 @@ async def buscar_permissao_por_id(
 @router.patch(
     "/{id}", 
     response_model=PermissaoResponse,
-    dependencies=[Depends(ValidarPermissoes("update:permissao"))]
+    dependencies=[Depends(ValidarPermissoes(["update:permissao"]))]
 )
 async def atualizar_permissao(
     *, 
@@ -101,7 +101,7 @@ async def atualizar_permissao(
 
 @router.delete(
     "/{id}",
-    dependencies=[Depends(ValidarPermissoes("delete:permissao"))]
+    dependencies=[Depends(ValidarPermissoes(["delete:permissao"]))]
 )
 async def deletar_permissao(
     *, 

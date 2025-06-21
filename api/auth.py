@@ -258,19 +258,16 @@ class ValidarPermissoes:
                 detail="Seu acesso não pôde ser validado. Tente fazer login novamente.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-                
-        if payload["scope"] == "auto_cadastro_usuario":
+        
+        permissoes_usuario = payload.get("permissoes")
+        token_permissoes_set = set(permissoes_usuario)
+        permissoes_requeridas_set = set(self.permissoes_requeridas)
+          
+        if set(["all:all"]).issubset(token_permissoes_set) or permissoes_requeridas_set.issubset(token_permissoes_set):
             return True
         else:
-            permissoes_usuario = payload.get("permissoes")
-            token_permissoes_set = set(permissoes_usuario)
-            permissoes_requeridas_set = set(self.permissoes_requeridas)
-            
-            if set(["all:all"]).issubset(token_permissoes_set) or permissoes_requeridas_set.issubset(token_permissoes_set):
-                return True
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Você não tem permissão para acessar este recurso.",
-                    headers={"WWW-Authenticate": "Bearer"},
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Você não tem permissão para acessar este recurso.",
+                headers={"WWW-Authenticate": "Bearer"},
             )
