@@ -55,6 +55,24 @@ async def criar_permissao(
     session.refresh(db_permissao)
     return db_permissao
 
+@router.get(
+    "/{id}", 
+    response_model=PermissaoResponse,
+    dependencies=[Depends(ValidarPermissoes("read:permissao"))]
+)
+async def buscar_permissao_por_id(
+    *, 
+    id: int, 
+    session: Session = SessionDep
+):
+    """Busca uma permissão pelo ID"""
+    
+    permissao = session.get(Permissao, id)
+    if not permissao:
+        raise HTTPException(status_code=404, detail="Permissão não encontrada")
+    
+    return permissao
+
 @router.patch(
     "/{id}", 
     response_model=PermissaoResponse,

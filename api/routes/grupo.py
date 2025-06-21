@@ -67,6 +67,28 @@ async def criar_grupo(
         permissoes = [{"id": permissao.id, "nome_permissao": permissao.nome_permissao} for permissao in db_grupo.permissoes],
     )
     
+@router.get(
+    "/{id}", 
+    response_model=GrupoResponse,
+    dependencies=[Depends(ValidarPermissoes("read:grupo"))]
+)
+async def buscar_grupo_por_id(
+    *, 
+    id: int, 
+    session: Session = SessionDep
+) -> GrupoResponse:
+    """Busca um grupo pelo ID"""
+    
+    grupo = session.get(Grupo, id)
+    if not grupo:
+        raise HTTPException(status_code=404, detail="Grupo não encontrado")
+    
+    return GrupoResponse(
+        id = grupo.id,
+        nome_grupo = grupo.nome_grupo,
+        permissoes = [{"id": permissao.id, "nome_permissao": permissao.nome_permissao} for permissao in grupo.permissoes],
+    )
+    
 @router.patch(
     "/{id}", 
     response_model=GrupoResponse,
