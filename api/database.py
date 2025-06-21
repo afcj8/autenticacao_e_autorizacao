@@ -83,7 +83,6 @@ def create_user_admin():
         
         user_admin = session.exec(select(Usuario).where(Usuario.nome_usuario == "admin")).first()
         if user_admin:
-            print("Usuário admin já existe.")
             return
         
         admin = Usuario(

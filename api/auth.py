@@ -213,3 +213,64 @@ async def buscar_super_usuario(
     return usuario_atual
 
 SuperUsuario = Depends(buscar_super_usuario)
+
+class ValidarPermissoes:
+    def __init__(
+        self, permissoes_requeridas: list[str], permissoes_usuario: bool = False
+    ):
+        self.permissoes_requeridas = permissoes_requeridas
+        self.permissoes_usuario = permissoes_usuario
+        
+    async def __call__(
+        self,
+        token: str = Depends(oauth2_scheme),
+        request: Request = None,
+    ):
+        if request:
+            if authorization := request.headers.get("Authorization"):
+                try:
+                    token = authorization.split(" ")[1]
+                except IndexError:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Os dados informados estão incorretos. Por favor, verifique e tente novamente.",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+            else:
+                try:
+                    token = request.query_params["token"]
+                except KeyError:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Os dados informados estão incorretos. Por favor, verifique e tente novamente.",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+            
+        try:
+            payload = jwt.decode(
+                token, 
+                SECRET_KEY,  # pyright: ignore
+                algorithms=[ALGORITHM]  # pyright: ignore
+            )
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Seu acesso não pôde ser validado. Tente fazer login novamente.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+                
+        if payload["scope"] == "auto_cadastro_usuario":
+            return True
+        else:
+            permissoes_usuario = payload.get("permissoes")
+            token_permissoes_set = set(permissoes_usuario)
+            permissoes_requeridas_set = set(self.permissoes_requeridas)
+            
+            if set(["all:all"]).issubset(token_permissoes_set) or permissoes_requeridas_set.issubset(token_permissoes_set):
+                return True
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Você não tem permissão para acessar este recurso. Verifique suas credenciais ou entre em contato com o administrador do sistema.",
+                    headers={"WWW-Authenticate": "Bearer"},
+            )
