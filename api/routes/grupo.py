@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from sqlmodel import Session, select
 
+from api.auth import ValidarPermissoes
 from api.database import SessionDep
 from api.models.usuario import Grupo, Permissao, UsuarioGrupoLink
 from api.serializers.usuario import GrupoResponse, GrupoRequest
@@ -12,7 +13,8 @@ router = APIRouter()
 
 @router.get(
     "", 
-    response_model=List[GrupoResponse], 
+    response_model=List[GrupoResponse],
+    dependencies=[Depends(ValidarPermissoes("read:grupo"))]
 )
 async def listar_grupos(
     *, 
@@ -24,7 +26,7 @@ async def listar_grupos(
     # para evitar que usuários comuns vejam este grupo
     # e suas permissões.
     
-    grupos = session.exec(select(Grupo)).all()
+    grupos = session.exec(select(Grupo).where(Grupo.nome_grupo != 'admins')).all()
     response = []
     for grupo in grupos:
         response.append(
@@ -38,14 +40,14 @@ async def listar_grupos(
 
 @router.post(
     "", 
-    response_model=GrupoResponse, 
-    status_code=201, 
+    status_code=201,
+    dependencies=[Depends(ValidarPermissoes("add:grupo"))]
 )
 async def criar_grupo(
     *, 
     grupo: GrupoRequest, 
     session: Session = SessionDep
-) -> GrupoResponse:
+):
     """Cria um novo grupo"""
     
     if session.exec(select(Grupo).where(Grupo.nome_grupo == grupo.nome_grupo)).first():
@@ -58,15 +60,12 @@ async def criar_grupo(
     session.commit()
     session.refresh(db_grupo)
     
-    return GrupoResponse(
-        id = db_grupo.id,
-        nome_grupo = db_grupo.nome_grupo,
-        permissoes = [{"id": permissao.id, "nome_permissao": permissao.nome_permissao} for permissao in permissoes],
-    )
+    return {"detail": "Grupo criado com sucesso."}
     
 @router.patch(
     "/{id}", 
-    response_model=GrupoResponse, 
+    response_model=GrupoResponse,
+    dependencies=[Depends(ValidarPermissoes("update:grupo"))]
 )
 async def atualizar_grupo(
     *, 
@@ -100,7 +99,8 @@ async def atualizar_grupo(
     )
     
 @router.delete(
-    "/{id}", 
+    "/{id}",
+    dependencies=[Depends(ValidarPermissoes("delete:grupo"))]
 )
 async def deletar_grupo(
     *, 
