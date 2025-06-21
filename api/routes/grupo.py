@@ -39,7 +39,8 @@ async def listar_grupos(
     return response
 
 @router.post(
-    "", 
+    "",
+    response_model=GrupoResponse,
     status_code=201,
     dependencies=[Depends(ValidarPermissoes("add:grupo"))]
 )
@@ -60,7 +61,11 @@ async def criar_grupo(
     session.commit()
     session.refresh(db_grupo)
     
-    return {"detail": "Grupo criado com sucesso."}
+    return GrupoResponse(
+        id = db_grupo.id,
+        nome_grupo = db_grupo.nome_grupo,
+        permissoes = [{"id": permissao.id, "nome_permissao": permissao.nome_permissao} for permissao in db_grupo.permissoes],
+    )
     
 @router.patch(
     "/{id}", 

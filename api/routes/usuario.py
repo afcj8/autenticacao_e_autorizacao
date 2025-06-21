@@ -4,6 +4,7 @@ from fastapi import APIRouter, File, UploadFile, Form, status, Depends, Body, Ba
 from fastapi.exceptions import HTTPException
 from sqlmodel import Session, select
 
+from api.auth import ValidarPermissoes
 from api.database import SessionDep
 from api.models.usuario import Usuario, Grupo
 from api.services.usuario import get_permissoes
@@ -35,6 +36,7 @@ router = APIRouter()
 @router.get(
     "", 
     response_model=list[UsuarioGrupoResponse], 
+    dependencies=[Depends(ValidarPermissoes("read:usuario"))]
 )
 async def listar_usuarios(
     *,
@@ -63,7 +65,8 @@ async def listar_usuarios(
 
 @router.post(
     "", 
-    status_code=201, 
+    status_code=201,
+    dependencies=[Depends(ValidarPermissoes("add:usuario"))]
 )
 async def criar_usuario(
     *,
@@ -146,6 +149,7 @@ async def buscar_usuario_logado(
 @router.get(
     "/{id}",
     response_model=UsuarioGrupoResponse,
+    dependencies=[Depends(ValidarPermissoes("read:usuario"))]
 )
 async def buscar_usuario_por_id(
     *,
@@ -206,6 +210,7 @@ async def atualizar_avatar_usuario(
 @router.patch(
     "/{id}/grupos", 
     status_code=200,
+    dependencies=[Depends(ValidarPermissoes("update:usuariogrupo"))]
 )
 async def atualizar_grupos_usuario(
     *,
@@ -255,6 +260,7 @@ async def atualizar_senha_usuario(
 @router.patch(
     "/{id}/status",
     status_code=200,
+    dependencies=[Depends(ValidarPermissoes("update:usuario"))]
 )
 async def atualizar_status_usuario(
     *,
